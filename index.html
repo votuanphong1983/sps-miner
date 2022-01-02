@@ -1,0 +1,361 @@
+<!doctype html>
+<html>
+
+<head>
+    <title>DEC Miners Index</title>
+    <meta name="description" content="DEC Miners Index">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+    <style>
+        .header {
+            display: flex;
+            font-weight: bold;
+            margin-left: 40px;
+        }
+
+        .save-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+
+        .index {
+            display: flex;
+        }
+
+        .account {
+            min-width: 180px;
+            color: lightseagreen;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .power {
+            font-weight: normal;
+            color: orange;
+        }
+
+        .dec {
+            min-width: 150px;
+            color: black;
+            display: flex;
+        }
+
+        .period-earning {
+            min-width: 120px;
+            color: black;
+            display: flex;
+        }
+
+        .ok-pe {
+            color: green;
+        }
+
+        .no-pe {
+            color: red;
+        }
+
+        .unit {
+            color: blue;
+            margin-left: 8px;
+        }
+
+        .rating {
+            margin-left: 50px;
+            min-width: 120px;
+        }
+
+        .rate {
+            min-width: 150px;
+        }
+
+        .quest {
+            min-width: 150px;
+        }
+
+        .quest-ok {
+            font-weight: bold;
+            color: green;
+        }
+
+        .owner {
+            font-weight: bold;
+            color: binance-com;
+            font-size: 30px;
+        }
+		.no-index{
+		  font-weight: bold;
+		  min-width:20px;
+		}
+		
+		li { background: #CCC; }
+		li:nth-child(odd) { background: #FFF; }
+        li:hover {background-color:rgb(231 126 126 / 71%);}
+		
+		ul {
+		  list-style: none;
+		}		
+
+    </style>
+</head>
+
+<body>
+    <h3>DEC Miners Index</h3>	
+    <button class="save-btn" style="display: none;" onclick="perisistData();"> Save </button>
+	<div>Total DEC: <span id="totalDecId"></span></div>
+	<div>Total DEC (exclude main acc): <span id="totalDecExId"></span></div>
+	<hr/>
+    <div class="header">
+		<div class="no-index">No.</div>
+        <div class="account">Account</div>
+        <div class="dec">DEC</div>
+        <div class="period-earning pe-header">N/A</div>
+        <div class="rating">Rating</div>
+		<div class="dec">CREDITS</div>
+		<div class="rate">Resource Credits</div>
+        <div class="rate">Capture Rate</div>
+        <div class="rate">Quest comleted?</div>
+		<div class="rate">Win rate</div>
+    </div>
+    <ul id="indexes"></ul>
+
+    <script>
+        const persistIntervalMinutes = 240; // 4 hours
+        const storageKey = "sps";
+        const storage = localStorage;
+        const savedData = JSON.parse(storage.getItem(storageKey));
+        const accountsInfo = [];
+        const timestamp = new Date().getTime();
+
+        $(document).ready(async () => {
+            const accList = [
+			"--------BOT3--------",
+			"yenxinh101","yenxinh102","yenxinh103","yenxinh104","yenxinh105","yenxinh106","yenxinh107","yenxinh108","yenxinh109","yenxinh110","yenxinh111","yenxinh112","yenxinh113","yenxinh114","yenxinh115","yenxinh116","yenxinh117","yenxinh118","yenxinh119","yenxinh120","yenxinh121","yenxinh122","yenxinh123","yenxinh124","yenxinh125","yenxinh126","yenxinh127","yenxinh128","yenxinh129","yenxinh130","yenxinh131","yenxinh132","yenxinh133","yenxinh134","yenxinh135","yenxinh136","yenxinh137","yenxinh138","yenxinh139","yenxinh140","yenxinh141","yenxinh142","yenxinh143","yenxinh144","yenxinh145","yenxinh146","yenxinh147","yenxinh148","yenxinh149","yenxinh150",
+			"--------BOT4--------",
+			"yenxinh153","yenxinh154","yenxinh155","yenxinh156","yenxinh157","yenxinh158","yenxinh159","yenxinh160","yenxinh161","yenxinh162","yenxinh163","yenxinh164","yenxinh165","yenxinh166","yenxinh167","yenxinh168","yenxinh169","yenxinh170","yenxinh171","yenxinh172","yenxinh173","yenxinh174","yenxinh175","yenxinh176","yenxinh177","yenxinh178","yenxinh179","yenxinh180","yenxinh181","yenxinh182","yenxinh183","yenxinh184","yenxinh185","yenxinh186","yenxinh187","yenxinh188","yenxinh189","yenxinh190","yenxinh191","yenxinh192","yenxinh193","yenxinh194","yenxinh195",
+			"yenyen01",
+			"yenyen02",
+			"yenyen03",
+			"yenyen04",
+			"yenyen05",
+			"-------- --------"			
+			];
+
+            if (savedData) {
+                $(".pe-header").html(`Earning in ${Math.round((timestamp - savedData?.timestamp) / 60000)} mins`);
+            }
+			let bot = -1;
+			var total = 0;
+			var mainDec = 0;
+			var index = 1;
+			let effectiveEarning = 0;
+            for (const account of accList) {
+                if (account.startsWith("-")) {			
+					if (bot >= 0)
+					{
+						const old = $(`#bot${bot}`).html();
+						$(`#bot${bot}`).html(`${old} (${effectiveEarning.toFixed(2)} DEC)`)						
+					}					
+					effectiveEarning = 0;
+				    index = 1;					
+					bot++;                    
+					$("#indexes").append(`<li id="bot${bot}"><span>${account}</span></li>`);
+                } else {
+                    const data = await getData(account);
+                    accountsInfo.push(data);
+
+                    if (savedData) {
+                        const last = savedData?.data?.find(x => x.account === account);
+
+                        // Calculation
+						calculatePlayersDetail(last, data);
+						if (!isNaN(data.periodEarning)) effectiveEarning += data.periodEarning;
+                    }
+
+                    // Rendering
+                    renderAccount(data, index++);
+					
+					total += (data.balance?.balance || 0);
+					if (account=='binance-com') {
+						mainDec = (data.balance?.balance || 0)
+					}
+                }
+
+				document.getElementById("totalDecId").textContent = total.toFixed(2) ;
+				document.getElementById("totalDecExId").textContent = (total - mainDec).toFixed(2) ;
+            }
+
+            // Check and persist data to storage
+            checkAndPersistData();
+
+            $(".save-btn").css("display", "block");
+        });
+
+        function checkCards(username) {
+            window.open(`https://peakmonsters.com/@${username}/cards`);
+        }
+		
+		
+        function checkQuest(username) {
+            window.open(`https://peakmonsters.com/@${username}/explorer`);
+        }
+
+        function getData(username) {
+		
+			var hiveData = {"id":1,"jsonrpc":"2.0","method":"rc_api.find_rc_accounts","params":{"accounts":[username]}};
+			var encodedData = JSON.stringify(hiveData); 
+            return Promise.all([
+				new Promise((resolve, reject) => {    
+					$.ajax({
+						timeout: 3000,
+						url: "https://api2.splinterlands.com/players/balances?username=" + username,
+						context: document,
+					    error: function(){
+							resolve({});
+						},
+						success: function(x){						
+							resolve(x);
+						},
+					})
+				}),
+				new Promise((resolve, reject) => {    
+					$.ajax({
+						timeout: 3000,
+						url: "https://api2.splinterlands.com/players/quests?username=" + username,
+						context: document,
+					    error: function(){
+							resolve({});
+						},
+						success: function(x){						
+							resolve(x);
+						},
+					})
+				}),
+				new Promise((resolve, reject) => {    
+					$.ajax({
+						timeout: 3000,
+						url: "https://api2.splinterlands.com/players/details?name=" + username,
+						context: document,
+					    error: function(){
+							resolve({});
+						},
+						success: function(x){						
+							resolve(x);
+						},
+					})
+				}),
+				new Promise((resolve, reject) => {    
+					$.ajax({
+						timeout: 3000,
+						type: "POST",
+						url: "https://api.hive.blog/",		
+						data: encodedData,
+					    error: function(){
+							resolve({});
+						},
+						success: function(x){						
+							resolve(x);
+						},
+					})
+				}),         
+            ]).then((results) => {
+                const balance = results[0];
+                const quest = results[1][0];
+                const playerD = results[2] ?? {};
+				const playerHive = results[3].result.rc_accounts[0] ?? {};
+
+                return {
+                    account: username,
+                    balance: balance?.filter(x => x.token === 'DEC')?.[0],
+					creditBalance: balance?.filter(x => x.token === 'CREDITS')?.[0],
+					ecrBalance: balance?.filter(x => x.token === 'ECR')?.[0],
+                    detail: playerD,
+                    quest,
+					resourceCredit: calculateRC(playerHive)
+                };
+            });
+        }
+				
+		function calculateRC(playerHive) {
+			var last_mana = +playerHive.rc_manabar.current_mana;
+			var last_update_time = +playerHive.rc_manabar.last_update_time;
+			var max_mana = +playerHive.max_rc;
+			var CURRENT_UNIX_TIMESTAMP = parseInt((new Date().getTime() / 1000).toFixed(0));    			
+
+			var elapsed = CURRENT_UNIX_TIMESTAMP - last_update_time;
+			var currentMana = last_mana + elapsed * max_mana / 432000;
+
+			if (currentMana > max_mana) {
+				currentMana = max_mana;
+			}
+		  
+			//determine percentage of available mana(RC)
+			var currentManaPerc = currentMana * 100 / max_mana;
+				
+			console.log(currentManaPerc);
+
+			return currentManaPerc;
+		}
+
+
+        function renderAccount(account, index) {
+            const dec = account.balance;
+			const credits = account.creditBalance;
+			const ecrBalance = account.resourceCredit;
+            const rating = account.detail.rating;
+            const rate = account.detail.capture_rate / 100;
+
+            const questStatus = account.quest?.completed_items + '/' + account.quest?.total_items
+            const questClass = account.quest?.completed_items == account.quest?.total_items ? 'quest-ok' : '';
+            const winRate = (account.detail.wins * 100 / account.detail.battles).toFixed(2);
+			
+			  const li = [];
+                const peClass = account.periodEarning > 0 ? 'ok-pe' : 'no-pe';
+				const pcClass = account.detail.collection_power >= 1000 ? 'ok-pe' : 'no-pe';
+                li.push(
+					`<div class="no-index">${index}.</div>`,
+                    `<div class="account" onclick="checkCards('${account.account}')">${account.account} <span class='${pcClass}'>(${account.detail.collection_power})</span></div>`,
+                    `<div class="dec">${dec?.balance.toFixed(2)}<div class="unit">DEC</div></div>`,					
+                    `<div class="period-earning ${peClass}">${savedData ? `${account.periodEarning.toFixed(2)} <div class="unit">DEC</div>` : ''}</div>`,
+                    `<div class="rating">${rating}</div>`,
+					`<div class="dec">${credits?.balance.toFixed(2)}</div>`,
+					`<div class="rate">${((ecrBalance || 0)).toFixed(2)}%</div>`,
+                    `<div class="rate">${rate}%</div>`,
+                    `<div class="quest ${questClass}"  onclick="checkQuest('${account.account}')">${questStatus}</div>`,
+					`<div class="rate">${winRate}%</div>`					
+                );
+                $('#indexes').append(`<li><div class="index">${li.join("")}</div></li>`);
+        }
+
+        function checkAndPersistData() {
+            if (savedData) {
+                // Check period to see if it is time to persist new data
+                if ((timestamp - savedData.timestamp) / 60000 >= persistIntervalMinutes) {
+                    perisistData();
+                }
+            } else {
+                // First perisistent
+                perisistData();
+            }
+        }
+
+        function perisistData() {
+            const toSave = JSON.stringify({
+                timestamp,
+                data: accountsInfo
+            });
+            storage.setItem(storageKey, toSave);
+        }
+
+        function calculatePlayersDetail(savedData, currentData) {
+		    if (!currentData || !savedData) {
+			  currentData.periodEarning = 0;
+			}
+			else {
+			   currentData.periodEarning = (currentData.balance?.balance ?? 0) - savedData.balance?.balance ?? 0;
+			}
+			           
+        }
+    </script>
+</body>
+
+</html>
